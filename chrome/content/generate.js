@@ -120,10 +120,10 @@ function generateTiles() {
     imgElm.setAttribute("src", imgURL.spec);
 }
 
-function contGenerate() {
-    const TILE_HEIGHT = 256;
-    const TILE_WIDTH = 256;
+const TILE_HEIGHT = 256;
+const TILE_WIDTH = 256;
 
+function contGenerate() {
     var outDir = document.getElementById("dest-picked").value;
 
     var imgElm = document.getElementById("source-image");
@@ -134,24 +134,21 @@ function contGenerate() {
     canvasElm.setAttribute("height", TILE_HEIGHT);
 
     var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-/*
-    var persister = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
-        .createInstance(Ci.nsIWebBrowserPersist);
-    persister.persistFlags |= Ci.nsIWebBrowserPersist.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
-*/
 
     // just count first
     var totalTileCount = 0;
+    var tn = 0;
     var sw = TILE_WIDTH;
     var sh = TILE_HEIGHT;
-    while (sw < imgDims.w && sh < imgDims.h) {
+    while (sw < imgDims.w || sh < imgDims.h) {
         var sy = 0;
-        while (sy < imgDims.h+sh) {
+        while (sy < imgDims.h) {
             var sx = 0;
-            while (sx < imgDims.w+sw) {
-                totalTileCount++;
+            while (sx < imgDims.w) {
+                totalTileCount = tn;
 
                 sx += sw;
+                tn++;
             }
             sy += sh;
         }
@@ -168,18 +165,19 @@ function contGenerate() {
     var statPost = stringsBundle.getString("progressLabelMadeCountPost");
     progressLabel.value = [statPre, 0, statMid, totalTileCount, statPost].join(" ");
 
-    var madeTileCount = 0;
+    tn = 0;
     sw = TILE_WIDTH;
     sh = TILE_HEIGHT;
     var zl = 0;
-    while (sw < imgDims.w*2 && sh < imgDims.h*2) {
+    while (sw < imgDims.w || sh < imgDims.h) {
         var sy = 0;
         var yn = 0;
-        while (sy < imgDims.h+sh) {
+        while (sy < imgDims.h) {
             var sx = 0;
             var xn = 0;
-            while (sx < imgDims.w+sw) {
+            while (sx < imgDims.w) {
                 ctx.drawImage(imgElm, sx, sy, sw, sh, 0, 0, TILE_WIDTH, TILE_HEIGHT);
+
                 var outFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile); 
                 outFile.followLinks = true;
                 outFile.initWithPath(outDir);
@@ -199,14 +197,13 @@ function contGenerate() {
                 persister.persistFlags |= Ci.nsIWebBrowserPersist.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
                 persister.saveURI(dataURI, null, null, null, null, outFile);
 
-
                 // update progress
-                madeTileCount++;
-                progressMeter.value = ((madeTileCount*100)/totalTileCount).toFixed(0);
-                progressLabel.value = [statPre, madeTileCount, statMid, totalTileCount, statPost].join(" ");
+                progressMeter.value = ((tn*100)/totalTileCount).toFixed(0);
+                progressLabel.value = [statPre, tn, statMid, totalTileCount, statPost].join(" ");
 
                 sx += sw;
                 xn++;
+                tn++;
             }
             sy += sh;
             yn++;
