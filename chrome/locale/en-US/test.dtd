@@ -1,4 +1,0 @@
-<!ENTITY test.window.title "Generate Tiles">
-<!ENTITY test.choose-source.button "Choose an image to create tiles of:">
-<!ENTITY test.choose-dest.button "Choose a directory to store tiles in:">
-<!ENTITY test.generate.label "Generate!">

@@ -1,0 +1,4 @@
+<!ENTITY generate.window.title "Generate Tiles">
+<!ENTITY generate.choose-source.button "Choose an image to create tiles of:">
+<!ENTITY generate.choose-dest.button "Choose a directory to store tiles in:">
+<!ENTITY generate.generate.label "Generate!">

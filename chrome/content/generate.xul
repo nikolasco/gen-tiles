@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+<?xml-stylesheet href="chrome://gen-tiles/skin/generate.css" type="text/css"?>
+
+<!DOCTYPE window SYSTEM "chrome://gen-tiles/locale/generate.dtd">
+
+<window xmlns:html="http://www.w3.org/1999/xhtml"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        title="&generate.window.title;"
+        onload="onLoad()">
+
+  <stringbundleset>
+    <stringbundle id="gen-tiles-bundle" src="chrome://gen-tiles/locale/generate.properties"/>
+  </stringbundleset>
+
+
+  <script src="generate.js" />
+
+  <vbox>
+
+    <hbox>
+      <button label="&generate.choose-source.button;"  oncommand="pickSource()"/>
+      <label id="source-picked" />
+    </hbox>
+
+    <hbox>
+      <button label="&generate.choose-dest.button;" oncommand="pickDest()" />
+      <label id="dest-picked" />
+    </hbox>
+
+    <button flex="1" label="&generate.generate.label;" oncommand="generateTiles()" />
+
+    <label id="error-list" />
+
+  </vbox>
+</window>
