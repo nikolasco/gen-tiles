@@ -32,5 +32,12 @@
 
     <label id="error-list" />
 
+    <progressmeter id="progress-meter" mode="determined" value="0" />
+    <label id="progress-label" />
+
   </vbox>
+
+  <html:img id="source-image" onload="contGenerate()" />
+  <html:canvas id="tile-canvas" />
+
 </window>

@@ -10,6 +10,11 @@ const mimeTypes = {
     "tiff": "image/tiff"
 };
 
+function setError(e) {
+    document.getElementById("error-list").value = 
+        ("string" == typeof(e))? e : e.join(", ");
+}
+
 /* string bundle, fetched on load */
 var stringsBundle;
 
@@ -45,6 +50,7 @@ function imageDimensions(imgFile) {
 }
 
 function pickSource() {
+    setError("");
     var picker = Cc["@mozilla.org/filepicker;1"]
         .createInstance(Ci.nsIFilePicker);
     picker.init(window, stringsBundle.getString("pickFileTitle"),
@@ -59,13 +65,14 @@ function pickSource() {
     if (!file.isFile()) { errors.push(stringsBundle.getString("errorNotFile")); }
     if (!file.isReadable()) { errors.push(stringsBundle.getString("errorNotReadable")); }
 
-    var errorsDesc = document.getElementById("error-list").value = errors.join(", ");
+    setError(errors);
     if (errors.length) { return; }
 
     document.getElementById("source-picked").value = file.path;
 }
 
 function pickDest() {
+    setError("");
     var picker = Cc["@mozilla.org/filepicker;1"]
         .createInstance(Ci.nsIFilePicker);
     picker.init(window, stringsBundle.getString("pickDirectoryTitle"),
@@ -79,27 +86,138 @@ function pickDest() {
     if (!file.isDirectory()) { errors.push(stringsBundle.getString("errorNotDirectory")); }
     if (!file.isWritable()) { errors.push(stringsBundle.getString("errorNotWriteable")); }
 
-    var errorsDesc = document.getElementById("error-list");
-    errorsDesc.value = errors.join(", ");
+    setError(errors);
     if (errors.length) { return; }
 
     document.getElementById("dest-picked").value = file.path;
 }
 
+var imgDims;
 function generateTiles() {
+    setError("");
+    var progressMeter = document.getElementById("progress-meter");
+    progressMeter.setAttribute("mode", "undetermined");
+
     var imgFileName = document.getElementById("source-picked").value;
     var dirName = document.getElementById("dest-picked").value;
+
+    if (!imgFileName) { setError("Must choose an image"); return; }
+    if (!dirName) { setError("Must choose a directory"); return; }
 
     var imgFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile); 
     imgFile.followLinks = true;
     imgFile.initWithPath(imgFileName);
 
-    var dims;
     try {
-        dims = imageDimensions(imgFile);
+        imgDims = imageDimensions(imgFile);
     } catch (e) {
-        document.getElementById("error-list").value = e.toString();
+        setError(e.toString());
     }
 
-    alert(uneval(dims));
+    var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+    var imgURL = ioService.newFileURI(imgFile);
+    var imgElm = document.getElementById("source-image");
+    imgElm.setAttribute("src", imgURL.spec);
+}
+
+function contGenerate() {
+    const TILE_HEIGHT = 256;
+    const TILE_WIDTH = 256;
+
+    var outDir = document.getElementById("dest-picked").value;
+
+    var imgElm = document.getElementById("source-image");
+    var canvasElm = document.getElementById("tile-canvas");
+    var ctx = canvasElm.getContext("2d");
+
+    canvasElm.setAttribute("width", TILE_WIDTH);
+    canvasElm.setAttribute("height", TILE_HEIGHT);
+
+    var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+/*
+    var persister = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
+        .createInstance(Ci.nsIWebBrowserPersist);
+    persister.persistFlags |= Ci.nsIWebBrowserPersist.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
+*/
+
+    // just count first
+    var totalTileCount = 0;
+    var sw = TILE_WIDTH;
+    var sh = TILE_HEIGHT;
+    while (sw < imgDims.w && sh < imgDims.h) {
+        var sy = 0;
+        while (sy < imgDims.h+sh) {
+            var sx = 0;
+            while (sx < imgDims.w+sw) {
+                totalTileCount++;
+
+                sx += sw;
+            }
+            sy += sh;
+        }
+        sh *= 2;
+        sw *= 2;
+    }
+
+    var progressMeter = document.getElementById("progress-meter");
+    progressMeter.setAttribute("mode", "determined");
+    progressMeter.value = "0";
+    var progressLabel = document.getElementById("progress-label");
+    var statPre = stringsBundle.getString("progressLabelMadeCountPre");
+    var statMid = stringsBundle.getString("progressLabelMadeCountMid");
+    var statPost = stringsBundle.getString("progressLabelMadeCountPost");
+    progressLabel.value = [statPre, 0, statMid, totalTileCount, statPost].join(" ");
+
+    var madeTileCount = 0;
+    sw = TILE_WIDTH;
+    sh = TILE_HEIGHT;
+    var zl = 0;
+    while (sw < imgDims.w*2 && sh < imgDims.h*2) {
+        var sy = 0;
+        var yn = 0;
+        while (sy < imgDims.h+sh) {
+            var sx = 0;
+            var xn = 0;
+            while (sx < imgDims.w+sw) {
+                ctx.drawImage(imgElm, sx, sy, sw, sh, 0, 0, TILE_WIDTH, TILE_HEIGHT);
+                var outFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile); 
+                outFile.followLinks = true;
+                outFile.initWithPath(outDir);
+                outFile.appendRelativePath(["tile",zl,xn,yn].join("_")+ ".png");
+
+                if(outFile.exists()) {
+                    setError(outFile.path + " already exists");
+                    return;
+                }
+
+                var dataURI = ioService.newURI(canvasElm.toDataURL(), "UTF8", null);
+                // clear the canvas at the first chance
+                canvasElm.width = canvasElm.width;
+
+                var persister = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
+                    .createInstance(Ci.nsIWebBrowserPersist);
+                persister.persistFlags |= Ci.nsIWebBrowserPersist.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
+                persister.saveURI(dataURI, null, null, null, null, outFile);
+
+
+                // update progress
+                madeTileCount++;
+                progressMeter.value = ((madeTileCount*100)/totalTileCount).toFixed(0);
+                progressLabel.value = [statPre, madeTileCount, statMid, totalTileCount, statPost].join(" ");
+
+                sx += sw;
+                xn++;
+            }
+            sy += sh;
+            yn++;
+        }
+        sh *= 2;
+        sw *= 2;
+        zl++;
+    }
+
+    // done!
+    progressMeter.value = "100";
+    progressLabel.value = stringsBundle.getString("progressLabelDone");
+    imgElm.setAttribute("src", "");
 }
