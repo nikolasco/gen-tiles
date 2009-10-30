@@ -3,3 +3,5 @@ Navigate to chrome://gen-tiles/content/generate.xul and select an image to
 tile. The output directory will have files with names of the form:
   "tile_" + zoom_level + "_" + x_index + "_" + y_index + ".png"
 where 0 is the zoom level at the highest resolution, x=0 is left and y=0 is top.
+
+The generated tiles will be 256x256 pixels and in the PNG format.
