@@ -3,20 +3,33 @@
 
 <!DOCTYPE window SYSTEM "chrome://gen-tiles/locale/test.dtd">
 
-<window title="&test.window.title;"
-        xmlns:html="http://www.w3.org/1999/xhtml"
-        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<window xmlns:html="http://www.w3.org/1999/xhtml"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        title="&test.window.title;"
+        onload="onLoad()">
+
+  <stringbundleset>
+    <stringbundle id="gen-tiles-bundle" src="chrome://gen-tiles/locale/test.properties"/>
+  </stringbundleset>
+
 
   <script src="test.js" />
 
   <vbox>
 
     <hbox>
-      <label>&test.choose.label;</label>
-      <html:input type="file" id="file-picker" />
+      <button label="&test.choose-source.button;"  oncommand="pickSource()"/>
+      <label id="source-picked" />
+    </hbox>
+
+    <hbox>
+      <button label="&test.choose-dest.button;" oncommand="pickDest()" />
+      <label id="dest-picked" />
     </hbox>
 
     <button flex="1" label="&test.generate.label;" oncommand="generateTiles()" />
+
+    <label id="error-list" />
 
   </vbox>
 </window>
