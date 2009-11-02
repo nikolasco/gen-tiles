@@ -1,6 +1,8 @@
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 
+var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+
 const mimeTypes = {
     "gif": "image/gif",
     "jpg": "image/jpeg",
@@ -15,11 +17,36 @@ function setError(e) {
         ("string" == typeof(e))? e : e.join(", ");
 }
 
-/* string bundle, fetched on load */
+/* handy elements to have */
 var stringsBundle;
+var statPre;
+var statMid;
+var statPost;
+
+var progressMeter;
+var progressLabel;
+
+var imgElm;
+var canvasElm;
+var canvasCtx;
+
+var destPicked;
 
 function onLoad() {
     stringsBundle = document.getElementById("gen-tiles-bundle");
+
+    statPre = stringsBundle.getString("progressLabelMadeCountPre");
+    statMid = stringsBundle.getString("progressLabelMadeCountMid");
+    statPost = stringsBundle.getString("progressLabelMadeCountPost");
+
+    progressMeter = document.getElementById("progress-meter");
+    progressLabel = document.getElementById("progress-label");
+
+    imgElm = document.getElementById("source-image");
+    canvasElm = document.getElementById("tile-canvas");
+    canvasCtx = canvasElm.getContext("2d");
+
+    destPicked = document.getElementById("dest-picked");
 }
 
 function imageDimensions(imgFile) {
@@ -89,20 +116,19 @@ function pickDest() {
     setError(errors);
     if (errors.length) { return; }
 
-    document.getElementById("dest-picked").value = file.path;
+    destPicked.value = file.path;
 }
 
 var imgDims;
 function generateTiles() {
-    setError("");
-    var progressMeter = document.getElementById("progress-meter");
-    progressMeter.setAttribute("mode", "undetermined");
-
     var imgFileName = document.getElementById("source-picked").value;
-    var dirName = document.getElementById("dest-picked").value;
+    var dirName = destPicked.value;
 
     if (!imgFileName) { setError("Must choose an image"); return; }
     if (!dirName) { setError("Must choose a directory"); return; }
+
+    setError("");
+    progressMeter.setAttribute("mode", "undetermined");
 
     var imgFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile); 
     imgFile.followLinks = true;
@@ -116,27 +142,18 @@ function generateTiles() {
 
     var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
     var imgURL = ioService.newFileURI(imgFile);
-    var imgElm = document.getElementById("source-image");
     imgElm.setAttribute("src", imgURL.spec);
 }
 
 const TILE_HEIGHT = 256;
 const TILE_WIDTH = 256;
 
+var totalTileCount = 0;
 function contGenerate() {
-    var outDir = document.getElementById("dest-picked").value;
-
-    var imgElm = document.getElementById("source-image");
-    var canvasElm = document.getElementById("tile-canvas");
-    var ctx = canvasElm.getContext("2d");
-
     canvasElm.setAttribute("width", TILE_WIDTH);
     canvasElm.setAttribute("height", TILE_HEIGHT);
 
-    var ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-
     // just count first
-    var totalTileCount = 0;
     var tn = 0;
     var sw = TILE_WIDTH;
     var sh = TILE_HEIGHT;
@@ -145,10 +162,10 @@ function contGenerate() {
         while (sy < imgDims.h) {
             var sx = 0;
             while (sx < imgDims.w) {
-                totalTileCount = tn;
-
                 sx += sw;
                 tn++;
+
+                totalTileCount = tn;
             }
             sy += sh;
         }
@@ -156,65 +173,68 @@ function contGenerate() {
         sw *= 2;
     }
 
-    var progressMeter = document.getElementById("progress-meter");
     progressMeter.setAttribute("mode", "determined");
     progressMeter.value = "0";
-    var progressLabel = document.getElementById("progress-label");
-    var statPre = stringsBundle.getString("progressLabelMadeCountPre");
-    var statMid = stringsBundle.getString("progressLabelMadeCountMid");
-    var statPost = stringsBundle.getString("progressLabelMadeCountPost");
     progressLabel.value = [statPre, 0, statMid, totalTileCount, statPost].join(" ");
 
-    tn = 0;
-    sw = TILE_WIDTH;
-    sh = TILE_HEIGHT;
-    var zl = 0;
-    while (sw < imgDims.w || sh < imgDims.h) {
-        var sy = 0;
-        var yn = 0;
-        while (sy < imgDims.h) {
-            var sx = 0;
-            var xn = 0;
-            while (sx < imgDims.w) {
-                ctx.drawImage(imgElm, sx, sy, sw, sh, 0, 0, TILE_WIDTH, TILE_HEIGHT);
+    window.setTimeout(genImage, 1, TILE_HEIGHT, TILE_WIDTH, 0, 0, 0, 0, 0, 0);
+}
 
-                var outFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile); 
-                outFile.followLinks = true;
-                outFile.initWithPath(outDir);
-                outFile.appendRelativePath(["tile",zl,xn,yn].join("_")+ ".png");
+function genImage(sh, sw, zl, sy, yn, sx, xn, tn) {
+    if (sw >= imgDims.w) sw = imgDims.w;
+    if (sh >= imgDims.h) sh = imgDims.h;
+    canvasCtx.drawImage(imgElm, sx, sy, sw, sh, 0, 0, TILE_WIDTH, TILE_HEIGHT);
 
-                if(outFile.exists()) {
-                    setError(outFile.path + " already exists");
-                    return;
-                }
+    var outDir = destPicked.value;
+    var outFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+    outFile.followLinks = true;
+    outFile.initWithPath(outDir);
+    outFile.appendRelativePath(["tile",zl,xn,yn].join("_")+ ".png");
 
-                var dataURI = ioService.newURI(canvasElm.toDataURL(), "UTF8", null);
-                // clear the canvas at the first chance
-                canvasElm.width = canvasElm.width;
+    if(outFile.exists()) {
+        setError(outFile.path + " already exists");
+        return;
+    }
 
-                var persister = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
-                    .createInstance(Ci.nsIWebBrowserPersist);
-                persister.persistFlags |= Ci.nsIWebBrowserPersist.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
-                persister.saveURI(dataURI, null, null, null, null, outFile);
+    var dataURI = ioService.newURI(canvasElm.toDataURL(), "UTF8", null);
+    // clear the canvas at the first chance
+    canvasElm.width = canvasElm.width;
 
-                // update progress
-                progressMeter.value = ((tn*100)/totalTileCount).toFixed(0);
-                progressLabel.value = [statPre, tn, statMid, totalTileCount, statPost].join(" ");
+    var persister = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
+        .createInstance(Ci.nsIWebBrowserPersist);
+    persister.persistFlags |= Ci.nsIWebBrowserPersist.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
+    persister.saveURI(dataURI, null, null, null, null, outFile);
 
+    // update progress
+    progressMeter.value = ((tn*100)/totalTileCount).toFixed(0);
+    progressLabel.value = [statPre, tn, statMid, totalTileCount, statPost].join(" ");
+
+    // generate the next image? if so, increment, etc. appropriately
+    if (sw < imgDims.w || sh < imgDims.h) {
+        if (sy < imgDims.h) {
+            if (sx < imgDims.w) {
                 sx += sw;
                 xn++;
                 tn++;
-            }
-            sy += sh;
-            yn++;
-        }
-        sh *= 2;
-        sw *= 2;
-        zl++;
-    }
+            } else {
+                sx = 0;
+                xn = 0;
 
-    // done!
-    progressMeter.value = "100";
-    progressLabel.value = stringsBundle.getString("progressLabelDone");
-    imgElm.setAttribute("src", "");
+                sy += sh;
+                yn++;
+            }
+        } else {
+            sy = 0;
+            yn = 0;
+
+            sh *= 2;
+            sw *= 2;
+            zl++;
+        }
+        window.setTimeout(genImage, 1, sh, sw, zl, sy, yn, sx, xn, tn);
+    } else {
+        progressMeter.value = "100";
+        progressLabel.value = stringsBundle.getString("progressLabelDone");
+        imgElm.setAttribute("src", "");
+    }
 }
