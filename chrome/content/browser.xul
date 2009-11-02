@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE overlay SYSTEM "chrome://gen-tiles/locale/browser.dtd">
+
+<overlay id="gen-tiles"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <menupopup id="menu_ToolsPopup">
+    <menuitem label="&generate.browser.open.label;"
+              oncommand="window.open('chrome://gen-tiles/content/generate.xul',
+                         'gen-tiles', 'chrome=yes,resizable=yes,width=600,height=200');" />
+  </menupopup>
+
+</overlay>
