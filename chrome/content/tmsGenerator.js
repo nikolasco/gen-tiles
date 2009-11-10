@@ -111,7 +111,7 @@ while(zl<this.maxZoom){
 		
 		this.resizeCtx.drawImage(this.imgElm,0,0,this.imgDims.w,this.imgDims.h,vx,vy,this.imgDims.w,this.imgDims.h);
 
-		this.imgElm.src="";
+		this.imgElm.setAttribute("src", "");
 		
 		//alert(vx+', '+vy+', startsw: '+startsw+', startsh: '+startsh+', '+this.imgDims.w+', '+this.imgDims.h);
 		
@@ -151,7 +151,6 @@ if (zl == 0) {
 */
 		
 		//this.progressLabel.value="canvas draws: "+sx+', '+sy+', '+tsw+', '+tsh+', tn: '+tn+' imgDims w,h: '+this.imgDims.w+', '+this.imgDims.h;
-		alert(this.resizeCanvas); return;
 		this.canvasCtx.drawImage(this.resizeCanvas, sx, sy, sw, sh, 0, 0, this.TILE_WIDTH, this.TILE_HEIGHT);
 		
 		
