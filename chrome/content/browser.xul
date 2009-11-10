@@ -5,10 +5,10 @@
 <overlay id="gen-tiles"
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-  <menupopup id="menu_ToolsPopup">
+  <menupopup id="menu_ToolsPopup" minwidth="200" minheight="800" position="after_start">
     <menuitem label="&generate.browser.open.label;"
-              oncommand="window.open('chrome://gen-tiles/content/generate.xul',
-                         'gen-tiles', 'chrome=yes,resizable=yes,width=600,height=200');" />
+              oncommand="window.open('chrome://gen-tiles/content/generateOOP.xul',
+                         'gen-tiles', 'chrome=yes,resizable=yes,width=600,height=400');" />
   </menupopup>
 
 </overlay>

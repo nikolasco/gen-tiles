@@ -2,9 +2,22 @@
     color: red;
 }
 
-#source-image, #tile-canvas {
+#source-image, #tile-canvas/*
+, #resize-canvas
+*/ {
     display: none;
     position: absolute;
     top: 0px;
     left: 0px;
+}
+#resize-canvas
+ {
+    /*display: none;
+    position: absolute;*/
+    top: 0px;
+    left: 0px;
+	z-index: 1000;
+}
+.buttonclass1{
+	width:100px;
 }

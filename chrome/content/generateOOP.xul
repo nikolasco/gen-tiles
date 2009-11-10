@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+<?xml-stylesheet href="chrome://gen-tiles/skin/generate.css" type="text/css"?>
+
+<!DOCTYPE overlay SYSTEM "chrome://gen-tiles/locale/generate.dtd">
+
+<window xmlns:html="http://www.w3.org/1999/xhtml"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        title="&generate.window.title;">
+
+  <stringbundleset>
+    <stringbundle id="gen-tiles-bundle" src="chrome://gen-tiles/locale/generate.properties"/>
+  </stringbundleset>
+<script src="extend.js" />
+<script src="genObject.js" />
+<script src="tmsGenerator.js"/>
+<script src="startEngage.js"/>
+  
+
+<vbox>
+	<groupbox>
+	<caption label="Pick a single image FILE or an entire FOLDER of images and Destination for Tiles"/>
+	    <hbox>
+	      <button class="buttonclass1" id="gen-dirbutton" label="&generate.choose-source-dir.button;"  tabindex="1" oncommand="engage('pickDirectory')" flex="2" />
+	      
+	    </hbox>
+		<hbox>
+			<button class="buttonclass1" label="&generate.choose-source.button;"  tabindex="2" oncommand="engage('pickSource')" flex="2" />
+	     
+		</hbox>
+	    <hbox>
+	      <button class="buttonclass1" label="&generate.choose-dest.button;" tabindex="3" oncommand="engage('pickDest')" flex="2" />
+	     
+	    </hbox>
+	    <hbox>
+	    	<label id="srcLabel">SOURCE: </label><label id="source-picked" />
+	      <label id="destLabel">DESTINATION: </label><label id="dest-picked" />
+	    </hbox>
+	</groupbox>
+	<hbox>
+    	<button class="buttonclass2" label="&generate.generate.label;" oncommand="engage('generateTiles')" flex="1" />
+	</hbox>
+	<hbox>
+	    <label id="error-list" />
+	
+	    <progressmeter id="progress-meter" mode="determined" value="0" />
+	    <label id="progress-label" />
+	 </hbox>
+	 <hbox>
+	    <label id="made-label" />
+	</hbox>
+ </vbox>
+
+  <html:img id="source-image" onload="engage('contGenerate')" />
+  <html:canvas id="resize-canvas"/>
+  <html:canvas id="tile-canvas" />
+
+</window>
